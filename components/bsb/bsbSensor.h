@@ -1,5 +1,8 @@
 #pragma once
 
+#include <map>
+#include <string>
+
 #include "bsbPacketSend.h"
 
 #include "esphome/components/sensor/sensor.h"
@@ -108,8 +111,24 @@ namespace esphome {
 
       void set_value( const std::string value ) { this->value_ = value; }
 
+      void set_value_int( int8_t value ) {
+        auto it = value_to_option_.find(value);
+        if (it != value_to_option_.end()) {
+          this->value_ = it->second;
+        } else {
+          this->value_ = std::to_string(value);
+        }
+      }
+
+      void add_option_mapping( int8_t value, const std::string& option ) {
+        value_to_option_[value] = option;
+      }
+
+      bool has_enum_mapping() const { return !value_to_option_.empty(); }
+
     protected:
       std::string value_;
+      std::map<int8_t, std::string> value_to_option_;
     };
 #endif
 

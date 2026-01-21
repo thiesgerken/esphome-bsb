@@ -3,6 +3,7 @@
 #include "bsbPacket.h"
 #include "bsbPacketReceive.h"
 #include "bsbPacketSend.h"
+#include "bsbSelect.h"
 #include "bsbSensor.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
@@ -74,6 +75,13 @@ namespace esphome {
         ESP_LOGCONFIG( TAG, "    field ID: 0x%08X", n->get_field_id() );
         ESP_LOGCONFIG( TAG, "    update_interval: %.3fs", n->get_update_interval() / 1000.0f );
       }
+      ESP_LOGCONFIG( TAG, "  Selects:" );
+      for( const auto& item : selects_ ) {
+        BsbSelect* s = item.second;
+        ESP_LOGCONFIG( TAG, "  - type: Select" );
+        ESP_LOGCONFIG( TAG, "    field ID: 0x%08X", s->get_field_id() );
+        ESP_LOGCONFIG( TAG, "    update_interval: %.3fs", s->get_update_interval() / 1000.0f );
+      }
     }
 
     void BsbComponent::loop() {
@@ -106,6 +114,22 @@ namespace esphome {
             if( !number.second->get_broadcast() ) {
               write_packet( number.second->createPackageGet( source_address_, destination_address_ ) );
 
+              packetSent = true;
+              break;
+            }
+          }
+        }
+
+        if( !packetSent ) {
+          for( auto& select : selects_ ) {
+            if( select.second->is_ready_to_set( now ) ) {
+              write_packet( select.second->createPackageSet( source_address_, destination_address_ ) );
+              select.second->schedule_next_update( now, IntervalGetAfterSet );
+              packetSent = true;
+              break;
+            }
+            if( select.second->is_ready_to_update( now ) ) {
+              write_packet( select.second->createPackageGet( source_address_, destination_address_ ) );
               packetSent = true;
               break;
             }
@@ -160,7 +184,11 @@ namespace esphome {
               case SensorType::TextSensor: {
                 BsbTextSensor* bsbSensor = ( BsbTextSensor* )sensor->second;
                 bsbSensor->schedule_next_regular_update( millis() );
-                bsbSensor->set_value( packet->parse_as_text() );
+                if (bsbSensor->has_enum_mapping()) {
+                  bsbSensor->set_value_int( packet->parse_as_int8() );
+                } else {
+                  bsbSensor->set_value( packet->parse_as_text() );
+                }
                 bsbSensor->publish();
               } break;
 #endif
@@ -216,13 +244,31 @@ namespace esphome {
             }
           }
         }
+
+        {
+          auto range = selects_.equal_range( packet->fieldId );
+          for( auto select = range.first; select != range.second; ++select ) {
+            BsbSelect* bsbSelect = select->second;
+            bsbSelect->schedule_next_regular_update( millis() );
+            bsbSelect->set_value( packet->parse_as_int8() );
+            bsbSelect->publish();
+          }
+        }
       }
 
       if( packet->command == BsbPacket::Command::Ack || packet->command == BsbPacket::Command::Nack ) {
-        auto range = numbers_.equal_range( packet->fieldId );
+        {
+          auto range = numbers_.equal_range( packet->fieldId );
+          for( auto number = range.first; number != range.second; ++number ) {
+            number->second->reset_dirty();
+          }
+        }
 
-        for( auto sensor = range.first; sensor != range.second; ++sensor ) {
-          sensor->second->reset_dirty();
+        {
+          auto range = selects_.equal_range( packet->fieldId );
+          for( auto select = range.first; select != range.second; ++select ) {
+            select->second->reset_dirty();
+          }
         }
       }
     }

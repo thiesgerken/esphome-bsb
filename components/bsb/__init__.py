@@ -12,7 +12,7 @@ CODEOWNERS = ["@eringerli"]
 MULTI_CONF = True
 
 DEPENDENCIES = ["uart"]
-AUTO_LOAD = ["sensor", "text_sensor"] #, "switch", "binary_sensor"
+AUTO_LOAD = ["sensor", "text_sensor", "select"] #, "switch", "binary_sensor"
 CONF_BSB_ID = "bsb_id"
 CONF_PARAMETER_NUMBER = "parameter_number"
 CONF_SOURCE_ADDRESS = "source_address"

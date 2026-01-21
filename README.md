@@ -86,6 +86,34 @@ This is the main way to get data *out* of the heating system.
 | `parameter_number` | optional |  | this is not used currently, but it is good to document this number in the YAML. |
 | `update_interval` | optional | 15min | interval to refresh the value from the heating system. Beware that reading a lot of data with an high update frequency can overload the heating system or the bus |
 
+## Selects
+Selects allow setting enum parameters with human-readable options. The component maps numeric values from the BSB bus to string options.
+
+| Key | Class | Default | Description |
+| --- | --- | --- | --- |
+| `bsb_id` | required | | the BSB bus |
+| `field_id` | required | | the uint32 of the field ID, e.g. `0x2D3D0574` |
+| `parameter_number` | optional |  | this is not used currently, but it is good to document this number in the YAML. |
+| `update_interval` | optional | 15min | interval to refresh the value from the heating system |
+| `enable_byte`| optional | 1 | some parameters use a special enable byte |
+| `options` | required | | mapping of numeric values to string options |
+
+Example:
+```yaml
+select:
+  - platform: bsb
+    bsb_id: bsb1
+    field_id: 0x2D3D0574
+    parameter_number: 700
+    name: Betriebsart HK1
+    update_interval: 5min
+    options:
+      0: "Schutzbetrieb"
+      1: "Automatik"
+      2: "Reduziert"
+      3: "Komfort"
+```
+
 ## Numbers
 This is the main way to get data *into* the heating system.
 

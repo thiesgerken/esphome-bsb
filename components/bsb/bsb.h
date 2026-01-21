@@ -7,6 +7,7 @@
   #include "esphome/components/binary_sensor/binary_sensor.h"
 #endif
 #include "bsbNumber.h"
+#include "bsbSelect.h"
 #include "bsbSensor.h"
 
 #include <cstdint>
@@ -21,6 +22,7 @@ namespace esphome {
 
     using SensorMap = std::unordered_multimap< uint32_t, BsbSensorBase* >;
     using NumberMap = std::unordered_multimap< uint32_t, BsbNumberBase* >;
+    using SelectMap = std::unordered_multimap< uint32_t, BsbSelect* >;
 
     class BsbComponent
         : public Component
@@ -45,6 +47,7 @@ namespace esphome {
 
       void register_sensor( BsbSensorBase* sensor ) { this->sensors_.insert( { sensor->get_field_id(), sensor } ); }
       void register_number( BsbNumberBase* number ) { this->numbers_.insert( { number->get_field_id(), number } ); }
+      void register_select( BsbSelect* select ) { this->selects_.insert( { select->get_field_id(), select } ); }
 
     protected:
       void callback_packet( const BsbPacket* packet );
@@ -55,6 +58,7 @@ namespace esphome {
 
       SensorMap sensors_;
       NumberMap numbers_;
+      SelectMap selects_;
 
       uint32_t query_interval_;
       uint32_t retry_interval_;
