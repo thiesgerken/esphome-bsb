@@ -151,25 +151,22 @@ namespace esphome {
 
       void set_enable_byte( const uint8_t enable_byte ) { this->enable_byte_ = enable_byte; }
 
-      void set_value( uint32_t value ) {
-        if( value == on_value_ ) {
-          value_ = true;
-        }
-        if( value == off_value_ ) {
-          value_ = false;
-        }
+      // BSB VT_ONOFF uses 0x00 for off and either 0x01 or 0xFF for on,
+      // so any non-zero value is treated as on.
+      void set_value( uint8_t value ) {
+        value_ = (value != off_value_);
       }
 
-      void           set_on_value( const uint32_t on_value ) { this->on_value_ = on_value; }
-      const uint32_t get_on_value() const { return this->on_value_; }
+      void          set_on_value( const uint8_t on_value ) { this->on_value_ = on_value; }
+      const uint8_t get_on_value() const { return this->on_value_; }
 
-      void           set_off_value( const uint32_t off_value ) { this->off_value_ = off_value; }
-      const uint32_t get_off_value() const { return this->off_value_; }
+      void          set_off_value( const uint8_t off_value ) { this->off_value_ = off_value; }
+      const uint8_t get_off_value() const { return this->off_value_; }
 
     protected:
-      uint32_t on_value_    = 1;
-      uint32_t off_value_   = 0;
-      uint8_t  enable_byte_ = 0x01;
+      uint8_t on_value_    = 1;
+      uint8_t off_value_   = 0;
+      uint8_t enable_byte_ = 0x01;
 
       bool value_;
     };

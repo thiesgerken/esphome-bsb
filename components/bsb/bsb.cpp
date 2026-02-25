@@ -199,20 +199,9 @@ namespace esphome {
               case SensorType::BinarySensor: {
                 BsbBinarySensor* bsbSensor = ( BsbBinarySensor* )sensor->second;
                 bsbSensor->schedule_next_regular_update( millis() );
-                switch( bsbSensor->get_value_type() ) {
-                  case BsbSensorValueType::UInt8:
-                    bsbSensor->set_value( packet->parse_as_uint8() );
-                    break;
-                  case BsbSensorValueType::Int8:
-                    bsbSensor->set_value( packet->parse_as_int8() );
-                    break;
-                  case BsbSensorValueType::Int16:
-                    bsbSensor->set_value( packet->parse_as_int16() );
-                    break;
-                  case BsbSensorValueType::Int32:
-                    bsbSensor->set_value( packet->parse_as_int32() );
-                    break;
-                }
+                // BSB on/off values are always byte-sized; use uint8_t to avoid
+                // sign extension of 0xFF (which BSB-LAN documents as a valid "on" value).
+                bsbSensor->set_value( packet->parse_as_uint8() );
                 bsbSensor->publish();
               } break;
 #endif

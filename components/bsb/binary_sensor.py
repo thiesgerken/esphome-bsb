@@ -32,8 +32,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_PARAMETER_NUMBER, default="0"): cv.positive_int,
             cv.Optional(CONF_BSB_TYPE, default="INT8"): cv.enum(CONF_BSB_TYPE_ENUM, upper=True, space="_"),
             cv.Optional(CONF_UPDATE_INTERVAL, default="15min"): cv.update_interval,
-            cv.Optional(CONF_OFF_VALUE, default="0"): cv.positive_int,
-            cv.Optional(CONF_ON_VALUE, default="1"): cv.positive_int,
+            cv.Optional(CONF_OFF_VALUE, default="0"): cv.hex_int_range(0x00, 0xff),
+            cv.Optional(CONF_ON_VALUE, default="1"): cv.hex_int_range(0x00, 0xff),
         }
     ),
     cv.has_exactly_one_key(CONF_FIELD_ID),
