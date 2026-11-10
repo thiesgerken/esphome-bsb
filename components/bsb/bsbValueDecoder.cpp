@@ -179,8 +179,10 @@ namespace esphome {
             return value( format( "%d", year ) );
           case ValueFormat::DayMonth:
             return value( format( "%02d.%02d.", payload[3], payload[2] ) );
-          default:
+          case ValueFormat::TimeOfDay:
             return value( format( "%02d:%02d:%02d", payload[5], payload[6], payload[7] ) );
+          default:
+            return length_mismatch(); // unreachable, decode_value() only passes the date formats
         }
       }
 
