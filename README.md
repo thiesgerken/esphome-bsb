@@ -55,6 +55,7 @@ uart:
 | `query_interval` | optional | 0.25s | time between communications. Be aware that the heating system needs some time to process the request and send back data. 4Hz seems to be the sweet spot with my heating system. |
 | `source_address` | optional | 66 | address to send from, usually 66 |
 | `destination_address` | optional | 0 | address of the heating system, usually 0 |
+| `parameter_dump` | optional | | serve a BSB-LAN compatible backup of all writable parameters, see [Parameter dump](#parameter-dump) |
 
 ```yaml
 bsb:
@@ -237,6 +238,35 @@ number:
     step: .01
     mode: box
 ```
+
+## Parameter dump
+With `parameter_dump`, `GET /JB` returns the same JSON that BSB-LAN's `/JB` ("backup all writable parameters") returns: same parameters, order, line format and value formatting, so BSB-LAN's `/JS` can restore it.
+
+```shell
+curl http://esp32-heater.local/JB > dump.json
+```
+
+The parameters come from the `BSB_LAN_custom_defs.h` that BSB-LAN generates for your controller (copy it next to your YAML). It is parsed at compile time into a table in flash, so the build doesn't need a BSB-LAN checkout. Like BSB-LAN with `DEFAULT_FLAG 0`, the dump contains every parameter of your device that is neither read-only nor write-only, including OEM parameters, and leaves out parameters the controller answers with an error or that don't decode. Definitions that use value types or flags the dump doesn't support fail the build.
+
+The response is streamed while the parameters are queried (one per `query_interval`, so at least 3.5 minutes for 800 parameters; a parameter the controller doesn't answer at all costs three 3 s timeouts, like in BSB-LAN). Regular polling of sensors, numbers and selects pauses during a dump. Only one dump runs at a time; closing the connection cancels it. Requires an ESP32 and adds `web_server_base` (no web UI).
+
+| Key | Class | Default | Description |
+| --- | --- | --- | --- |
+| `definitions` | required | | path to BSB-LAN's `BSB_LAN_custom_defs.h` for the controller |
+| `device_family` | required | | BSB-LAN device family of the controller (parameter 6225, also in the first line of the definitions) |
+| `device_variant` | required | | BSB-LAN device variant of the controller (parameter 6226) |
+
+```yaml
+bsb:
+  id: bsb1
+  uart_id: uart_bsb
+  parameter_dump:
+    definitions: bsb/BSB_LAN_custom_defs.h
+    device_family: 123
+    device_variant: 4
+```
+
+Differences to BSB-LAN: BSB-LAN's generic PPS parameters (15000-15099) are not part of the custom definitions and therefore not queried (BSB-LAN queries them over BSB too, they only appear in its dump if the controller answers them), and `/JB!<destination>` is not supported.
 
 # Getting Started
 You usually want to read out the identification and the type of the heating system, so you can search for the parameters in the header file from BSB-LAN.

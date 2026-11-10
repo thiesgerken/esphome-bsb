@@ -25,6 +25,11 @@ namespace esphome {
       ESP_LOGCONFIG( TAG, "  retry interval: %.3fs", this->retry_interval_ / 1000.0f );
       ESP_LOGCONFIG( TAG, "  source address: 0x%02X", this->source_address_ );
       ESP_LOGCONFIG( TAG, "  destination address: 0x%02X", this->destination_address_ );
+#ifdef USE_BSB_PARAMETER_DUMP
+      if( parameter_dump_ != nullptr ) {
+        ESP_LOGCONFIG( TAG, "  parameter dump: GET /JB, %u parameters", ( unsigned )parameter_dump_->parameter_count() );
+      }
+#endif
 
       ESP_LOGCONFIG( TAG, "  Sensors:" );
       for( const auto& item : sensors_ ) {
@@ -94,55 +99,71 @@ namespace esphome {
       if( now > last_query_ ) {
         last_query_ = now + query_interval_;
 
-        bool packetSent = false;
+#ifdef USE_BSB_PARAMETER_DUMP
+        if( parameter_dump_ != nullptr ) {
+          const auto query = parameter_dump_->poll( now );
+          if( query.has_value() ) {
+            write_packet( *query );
+          }
+          if( parameter_dump_->is_running() ) {
+            return; // regular polling pauses while a dump runs
+          }
+        }
+#endif
 
-        for( auto& number : numbers_ ) {
-          if( number.second->is_ready_to_set( now ) ) {
-            write_packet( number.second->createPackageSet( source_address_, destination_address_ ) );
+        query_next_entity( now );
+      }
+    }
 
-            if( number.second->get_broadcast() ) {
-              number.second->reset_dirty();
-              number.second->publish();
-            } else {
-              number.second->schedule_next_update( now, IntervalGetAfterSet );
-            }
+    void BsbComponent::query_next_entity( const uint32_t now ) {
+      bool packetSent = false;
+
+      for( auto& number : numbers_ ) {
+        if( number.second->is_ready_to_set( now ) ) {
+          write_packet( number.second->createPackageSet( source_address_, destination_address_ ) );
+
+          if( number.second->get_broadcast() ) {
+            number.second->reset_dirty();
+            number.second->publish();
+          } else {
+            number.second->schedule_next_update( now, IntervalGetAfterSet );
+          }
+
+          packetSent = true;
+          break;
+        }
+        if( number.second->is_ready_to_update( now ) ) {
+          if( !number.second->get_broadcast() ) {
+            write_packet( number.second->createPackageGet( source_address_, destination_address_ ) );
 
             packetSent = true;
             break;
           }
-          if( number.second->is_ready_to_update( now ) ) {
-            if( !number.second->get_broadcast() ) {
-              write_packet( number.second->createPackageGet( source_address_, destination_address_ ) );
+        }
+      }
 
-              packetSent = true;
-              break;
-            }
+      if( !packetSent ) {
+        for( auto& select : selects_ ) {
+          if( select.second->is_ready_to_set( now ) ) {
+            write_packet( select.second->createPackageSet( source_address_, destination_address_ ) );
+            select.second->schedule_next_update( now, IntervalGetAfterSet );
+            packetSent = true;
+            break;
+          }
+          if( select.second->is_ready_to_update( now ) ) {
+            write_packet( select.second->createPackageGet( source_address_, destination_address_ ) );
+            packetSent = true;
+            break;
           }
         }
+      }
 
-        if( !packetSent ) {
-          for( auto& select : selects_ ) {
-            if( select.second->is_ready_to_set( now ) ) {
-              write_packet( select.second->createPackageSet( source_address_, destination_address_ ) );
-              select.second->schedule_next_update( now, IntervalGetAfterSet );
-              packetSent = true;
-              break;
-            }
-            if( select.second->is_ready_to_update( now ) ) {
-              write_packet( select.second->createPackageGet( source_address_, destination_address_ ) );
-              packetSent = true;
-              break;
-            }
-          }
-        }
+      if( !packetSent ) {
+        for( auto& sensor : sensors_ ) {
+          if( sensor.second->is_ready( now ) ) {
+            write_packet( sensor.second->createPackageGet( source_address_, destination_address_ ) );
 
-        if( !packetSent ) {
-          for( auto& sensor : sensors_ ) {
-            if( sensor.second->is_ready( now ) ) {
-              write_packet( sensor.second->createPackageGet( source_address_, destination_address_ ) );
-
-              break;
-            }
+            break;
           }
         }
       }
@@ -150,6 +171,12 @@ namespace esphome {
 
     void BsbComponent::callback_packet( const BsbPacket* packet ) {
       ESP_LOGD( TAG, "<<< %s", ( packet->print_packet() ).c_str() );
+
+#ifdef USE_BSB_PARAMETER_DUMP
+      if( parameter_dump_ != nullptr ) {
+        parameter_dump_->handle_packet( *packet );
+      }
+#endif
 
       if( packet->command == BsbPacket::Command::Inf || packet->command == BsbPacket::Command::Ret ) {
         {
