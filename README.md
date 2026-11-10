@@ -429,3 +429,11 @@ number:
     divisor: 50
 ```
 
+# Tests
+Host-side tests for the parameter dump (value decoding, definitions parser and table codegen) need a C++17 compiler and Python 3:
+
+```shell
+tests/run.sh
+```
+
+They also run the parser against `tests/fixtures/BSB_LAN_custom_defs.h`, an excerpt of the BSB-LAN definitions of an LMS15 (CC BY-NC-SA 4.0, like BSB-LAN), cut by `tests/fixtures/trim_custom_defs.py`.
