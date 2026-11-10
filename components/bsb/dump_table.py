@@ -14,9 +14,9 @@ from .bsb_lan_defs import (
     CustomDefinitions,
     DefinitionsError,
     float32,
-    select_dump_entries,
 )
 from .bsb_value_types import VALUE_TYPES, ValueType
+from .dump_selection import select_dump_entries
 
 ENUM_FORMATS = ("Choice", "Enum")
 

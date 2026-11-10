@@ -13,7 +13,8 @@ _package = types.ModuleType("bsb")
 _package.__path__ = [str(Path(__file__).parents[1] / "components" / "bsb")]
 sys.modules["bsb"] = _package
 
-from bsb.bsb_lan_defs import CustomDefinitions, DefinitionsError, float32, select_dump_entries  # noqa: E402
+from bsb.bsb_lan_defs import CustomDefinitions, DefinitionsError, float32  # noqa: E402
+from bsb.dump_selection import select_dump_entries  # noqa: E402
 from bsb.dump_table import build_dump_rows, render_dump_table  # noqa: E402
 
 DEFINITIONS = r"""
