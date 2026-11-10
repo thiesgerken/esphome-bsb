@@ -15,7 +15,7 @@ namespace esphome {
   namespace bsb {
     class BsbPacket {
     public:
-      enum class Command : uint8_t { None = 0, Inf = 2, Set = 3, Ack = 4, Nack = 5, Get = 6, Ret = 7 };
+      enum class Command : uint8_t { None = 0, Inf = 2, Set = 3, Ack = 4, Nack = 5, Get = 6, Ret = 7, Error = 8 };
 
       BsbPacket() {
         buffer.reserve( 32 );
@@ -66,6 +66,9 @@ namespace esphome {
             break;
           case Command::Ret:
             output += "Ret";
+            break;
+          case Command::Error:
+            output += "Err";
             break;
           default:
             snprintf( str, 100, "UNK (%02hhX)", ( uint8_t )command );

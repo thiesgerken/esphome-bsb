@@ -1,5 +1,7 @@
 #pragma once
 
+#include "esphome/core/defines.h"
+
 #include "bsbPacket.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
@@ -9,6 +11,9 @@
 #include "bsbNumber.h"
 #include "bsbSelect.h"
 #include "bsbSensor.h"
+#ifdef USE_BSB_PARAMETER_DUMP
+  #include "bsbParameterDump.h"
+#endif
 
 #include <cstdint>
 #include <unordered_map>
@@ -51,10 +56,15 @@ namespace esphome {
       void register_number( BsbNumberBase* number ) { this->numbers_.insert( { number->get_field_id(), number } ); }
       void register_select( BsbSelect* select ) { this->selects_.insert( { select->get_field_id(), select } ); }
 
+#ifdef USE_BSB_PARAMETER_DUMP
+      void set_parameter_dump( BsbParameterDump* parameter_dump ) { this->parameter_dump_ = parameter_dump; }
+#endif
+
       void write_packet( const BsbPacket& packet );
 
     protected:
       void callback_packet( const BsbPacket* packet );
+      void query_next_entity( uint32_t now );
 
       BsbPacketReceive bsbPacketReceive = BsbPacketReceive( [&]( const BsbPacket* packet ) { callback_packet( packet ); } );
 
@@ -68,6 +78,10 @@ namespace esphome {
 
       uint8_t source_address_;
       uint8_t destination_address_;
+
+#ifdef USE_BSB_PARAMETER_DUMP
+      BsbParameterDump* parameter_dump_ = nullptr;
+#endif
 
     private:
       uint32_t last_query_ = 0;
