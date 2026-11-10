@@ -187,7 +187,11 @@ namespace esphome {
                 if (bsbSensor->get_value_type() == BsbSensorValueType::DateTime) {
                   bsbSensor->set_value( packet->parse_as_datetime() );
                 } else if (bsbSensor->has_enum_mapping()) {
-                  bsbSensor->set_value_int( packet->parse_as_int8() );
+                  // Most enums arrive as one byte, but some controllers send two
+                  // (e.g. 8000 Status Heizkreis on LMS15); `type: int16` selects that.
+                  bsbSensor->set_value_int( bsbSensor->get_value_type() == BsbSensorValueType::Int16
+                                              ? packet->parse_as_int16()
+                                              : packet->parse_as_uint8() );
                 } else {
                   bsbSensor->set_value( packet->parse_as_text() );
                 }

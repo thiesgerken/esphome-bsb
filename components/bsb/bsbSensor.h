@@ -120,7 +120,7 @@ namespace esphome {
 
       void set_value( const std::string value ) { this->value_ = value; }
 
-      void set_value_int( int8_t value ) {
+      void set_value_int( int16_t value ) {
         auto it = value_to_option_.find(value);
         if (it != value_to_option_.end()) {
           this->value_ = it->second;
@@ -129,7 +129,7 @@ namespace esphome {
         }
       }
 
-      void add_option_mapping( int8_t value, const std::string& option ) {
+      void add_option_mapping( int16_t value, const std::string& option ) {
         value_to_option_[value] = option;
       }
 
@@ -137,7 +137,7 @@ namespace esphome {
 
     protected:
       std::string value_;
-      std::map<int8_t, std::string> value_to_option_;
+      std::map<int16_t, std::string> value_to_option_;
     };
 #endif
 

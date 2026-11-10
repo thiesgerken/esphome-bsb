@@ -85,7 +85,7 @@ This is the main way to get data *out* of the heating system.
 | `field_id` | required | | the uint32 of the field ID, pe `0x053D0001` |
 | `parameter_number` | optional |  | this is not used currently, but it is good to document this number in the YAML. |
 | `update_interval` | optional | 15min | interval to refresh the value from the heating system. Beware that reading a lot of data with an high update frequency can overload the heating system or the bus |
-| `type` | optional | | set to `DATETIME` to parse datetime values (parameter 0) |
+| `type` | optional | | set to `DATETIME` to parse datetime values (parameter 0), or to `INT16` for enums the controller sends as two bytes |
 | `options` | optional | | mapping of numeric values to string options for enum parameters |
 
 ### Datetime
@@ -119,6 +119,8 @@ text_sensor:
       2: "Reduced"
       3: "Comfort"
 ```
+
+Enum values are read as one unsigned byte by default. Some controllers send certain enums as two bytes (e.g. parameter 8000 on an LMS15); a one-byte read then always yields `0`. Add `type: int16` for those.
 
 ## Selects
 Selects allow setting enum parameters with human-readable options. The component maps numeric values from the BSB bus to string options.
